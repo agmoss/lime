@@ -1,18 +1,23 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, text, div, h1, img)
-import Html.Attributes exposing (src)
-import Http exposing (expectJson, request,header)
+import Html exposing (Html, button, div, h1, img, input, text)
+import Html.Attributes exposing (placeholder, src, value)
+import Html.Events exposing (onClick, onInput)
+import Http exposing (expectJson, header, request)
 import Json.Decode as D exposing (Decoder, field, string)
 import RemoteData exposing (RemoteData(..), WebData)
 
+
+
 --- RYME records & decoders
+
 
 type alias Words =
     { word : String
     , rhymes : Rhymes
     }
+
 
 type alias Rhymes =
     { all : List String
@@ -23,17 +28,18 @@ stringArrayDecoder : D.Decoder (List String)
 stringArrayDecoder =
     D.list D.string
 
+
 decodeWords : Decoder Words
 decodeWords =
     D.map2 Words
-        (D.field "word"  D.string)
-        (D.field "rhymes"  decodeRhymes)
+        (D.field "word" D.string)
+        (D.field "rhymes" decodeRhymes)
+
 
 decodeRhymes : Decoder Rhymes
-decodeRhymes = 
-    D.map Rhymes 
-        (D.field "all" stringArrayDecoder )
-        
+decodeRhymes =
+    D.map Rhymes
+        (D.field "all" stringArrayDecoder)
 
 
 
@@ -41,23 +47,28 @@ decodeRhymes =
 
 
 type alias Model =
-    {rhymesData: WebData Words}
+    { rhymesData : WebData Words
+    , inputWord : String
+    }
 
 
-init : ( Model )
-init =
-    ( {rhymesData = Loading} )
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( Model NotAsked "word", Cmd.none )
+
 
 type Msg
     = RhymesDataResponse (WebData Words)
+    | UpdateWord String
+    | GetRhymesData
 
 
-fetchRhymesData : Cmd Msg
-fetchRhymesData =
-    Http.request 
+fetchRhymesData : String -> Cmd Msg
+fetchRhymesData input =
+    Http.request
         { method = "GET"
-        , headers = [ header "x-rapidapi-host" "wordsapiv1.p.rapidapi.com", header "x-rapidapi-key" "KEY"  ]
-        , url = "https://wordsapiv1.p.mashape.com/words/lime/rhymes"
+        , headers = [ header "x-rapidapi-host" "wordsapiv1.p.rapidapi.com", header "x-rapidapi-key" "a7f48b639amsh91af3afe2b70fcfp1d772bjsnc38a2bbeb654" ]
+        , url = "https://wordsapiv1.p.mashape.com/words/" ++ input ++ "/rhymes"
         , body = Http.emptyBody
         , expect =
             expectJson
@@ -65,8 +76,7 @@ fetchRhymesData =
                 decodeWords
         , timeout = Nothing
         , tracker = Nothing
-
-        }  
+        }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -77,29 +87,36 @@ update msg model =
             , Cmd.none
             )
 
+        UpdateWord word ->
+            ( { model | inputWord = word }, Cmd.none )
+
+        GetRhymesData ->
+            ( model, fetchRhymesData model.inputWord )
 
 
 
 ---- VIEW ----
 
+
 viewWords : Words -> Html msg
 viewWords rhymesData =
     div []
         [ img [ src "/logo.svg" ] []
-        , h1 [] [text rhymesData.word]
-        , div [] [viewRhymes rhymesData.rhymes]
+        , h1 [] [ text rhymesData.word ]
+        , div [] [ viewRhymes rhymesData.rhymes ]
         ]
-         
+
 
 viewRhymes : Rhymes -> Html msg
 viewRhymes posts =
-    div [] ( List.map text posts.all) 
+    div [] (List.map text posts.all)
+
 
 view : Model -> Html Msg
 view model =
     case model.rhymesData of
         NotAsked ->
-            div [] [ text "Not Asked" ]
+            asker model
 
         Loading ->
             div [] [ text "Loading" ]
@@ -111,6 +128,18 @@ view model =
             viewWords rhymesData
 
 
+asker : Model -> Html Msg
+asker model =
+    div []
+        [ img [ src "/logo.svg" ] []
+        , button [ onClick GetRhymesData ] [ text "Search" ]
+        , div []
+            [ input [ placeholder "Word", value model.inputWord, onInput UpdateWord ] []
+            , div [] [ text "Loading" ]
+            , div [] [ text model.inputWord ]
+            ]
+        ]
+
 
 
 ---- PROGRAM ----
@@ -119,7 +148,7 @@ view model =
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \_ -> (init,fetchRhymesData)
+        { init = init
         , view = view
         , update = update
         , subscriptions = always Sub.none

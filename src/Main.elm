@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, button, div, h1, h2, img, input, li, text, ul)
-import Html.Attributes exposing (placeholder, src, value)
+import Html.Attributes exposing (id, placeholder, src, value)
 import Html.Events exposing (onClick, onInput)
 import Http exposing (expectJson, header, request)
 import Json.Decode as D exposing (Decoder, field, string)
@@ -100,8 +100,10 @@ update msg model =
 
 renderList : List String -> Html msg
 renderList lst =
-    ul []
-        (List.map (\l -> li [] [ text l ]) lst)
+    div [ id "list" ]
+        [ ul []
+            (List.map (\l -> li [] [ text l ]) lst)
+        ]
 
 
 viewWords : Words -> Html msg

@@ -1,3 +1,18 @@
+<h1 align="center">lime</h1>
+
+<div align="center">
+  <img src="public/logo.svg" alt="Elm Logo" width="200" height="200"/>
+</div>
+<div align="center">
+  <strong>Elm Experiments</strong>
+</div>
+<br />
+
+<div align="center">
+  <sub>Built by
+  <a href="https://github.com/agmoss">Andrew Moss</a>
+</div>
+
 # Elm App
 
 This project is bootstrapped with [Create Elm App](https://github.com/halfzebra/create-elm-app).

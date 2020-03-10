@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Debug exposing (log)
 import Html exposing (Html, button, div, h1, h2, img, input, li, text, ul)
 import Html.Attributes exposing (id, placeholder, src, value)
 import Html.Events exposing (onClick, onInput)
@@ -10,7 +11,7 @@ import RemoteData exposing (RemoteData(..), WebData)
 
 
 
---- RYME records & decoders
+--- Rhymes records & decoders
 
 
 type alias Words =
@@ -61,6 +62,7 @@ type Msg
     = RhymesDataResponse (WebData Words)
     | UpdateWord String
     | GetRhymesData
+    | ClearModelData
 
 
 fetchRhymesData : String -> Cmd Msg
@@ -91,7 +93,10 @@ update msg model =
             ( { model | inputWord = word }, Cmd.none )
 
         GetRhymesData ->
-            ( model, fetchRhymesData model.inputWord )
+            ( { model | rhymesData = Loading }, fetchRhymesData model.inputWord )
+
+        ClearModelData ->
+            ( { model | rhymesData = NotAsked, inputWord = "" }, Cmd.none )
 
 
 
@@ -126,6 +131,7 @@ asker model =
         , h1 [] [ text "Lime " ]
         , input [ placeholder "Enter a word!", value model.inputWord, onInput UpdateWord ] []
         , button [ onClick GetRhymesData ] [ text "Search" ]
+        , button [ onClick ClearModelData ] [ text "Clear" ]
         ]
 
 
@@ -139,7 +145,10 @@ view model =
                 ]
 
         Loading ->
-            div [] [ text "Remote Data State: Loading" ]
+            div []
+                [ asker model
+                , text "Remote Data State: Loading"
+                ]
 
         Failure _ ->
             div []
